@@ -6,3 +6,4 @@ httpx
 jinja2
 sqlalchemy
 aiosqlite
+python-multipart
