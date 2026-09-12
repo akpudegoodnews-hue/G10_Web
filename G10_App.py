@@ -23,7 +23,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from httpx import AsyncClient
 from pydantic import BaseModel, Field
@@ -184,10 +184,44 @@ async def favicon():
     return Response(status_code=204)
 
 
+# ==========================================
+# PWA SERVICE WORKER & MANIFEST ENDPOINTS
+# ==========================================
 @app.get("/sw.js", include_in_schema=False)
 @app.get("/service-worker.js", include_in_schema=False)
-async def service_worker():
-    return FileResponse("static/sw.js", media_type="application/javascript")
+async def get_sw():
+    content = """
+    self.addEventListener('fetch', function(event) {
+        // Simple pass-through service worker for PWA installability
+    });
+    """
+    return Response(content=content, media_type="application/javascript")
+
+
+@app.get("/manifest.json", include_in_schema=False)
+async def get_manifest():
+    return JSONResponse(
+        {
+            "name": "G10 Master Hub",
+            "short_name": "G10 Hub",
+            "start_url": "/",
+            "display": "standalone",
+            "background_color": "#171717",
+            "theme_color": "#171717",
+            "icons": [
+                {
+                    "src": "https://via.placeholder.com/192",
+                    "sizes": "192x192",
+                    "type": "image/png",
+                },
+                {
+                    "src": "https://via.placeholder.com/512",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                },
+            ],
+        }
+    )
 
 
 # ==========================================
@@ -271,7 +305,6 @@ async def fetch_sportybet_codes():
     except Exception as e:
         logger.error(f"Scraper error: {str(e)}")
 
-    # Ensure 20 active codes are returned
     while len(sportybet_tickets) < 20:
         idx = len(sportybet_tickets) + 1
         sportybet_tickets.append(
@@ -294,7 +327,8 @@ async def fetch_live_fixtures():
     today_str = now_wat.strftime("%Y-%m-%d")
     formatted_date = now_wat.strftime("%a, %b %d, %Y")
 
-    url = f"https://api.the-odds-api.com/v4/sports/soccer_epl/scores/?apiKey={api_key}&daysFrom=1&dateFormat=iso"
+    # Fixed: Query daysFrom=0 to strictly get current/upcoming day match scores and odds
+    url = f"https://api.the-odds-api.com/v4/sports/soccer_epl/scores/?apiKey={api_key}&daysFrom=0&dateFormat=iso"
 
     matches = []
     try:
@@ -303,57 +337,59 @@ async def fetch_live_fixtures():
             if response.status_code == 200:
                 data = response.json()
                 for item in data:
-                    commence_time = item.get("commence_time", now_wat.isoformat())
-                    # Filter out matches older than today
-                    if commence_time.startswith(today_str):
-                        home_team = item.get("home_team", "Home Team")
-                        away_team = item.get("away_team", "Away Team")
-                        scores = item.get("scores")
-                        home_score = 0
-                        away_score = 0
-                        has_started = False
-                        if scores:
-                            has_started = True
-                            for s in scores:
-                                if s.get("name") == home_team:
-                                    home_score = int(s.get("score", 0))
-                                elif s.get("name") == away_team:
-                                    away_score = int(s.get("score", 0))
+                    commence_time_str = item.get("commence_time")
+                    if commence_time_str:
+                        # Convert UTC match time to WAT local time for date verification
+                        utc_dt = datetime.fromisoformat(commence_time_str.replace("Z", "+00:00"))
+                        wat_dt = utc_dt.astimezone(WAT_TIMEZONE)
+                        match_date_str = wat_dt.strftime("%Y-%m-%d")
 
-                        match_status = (
-                            "FINISHED"
-                            if item.get("completed")
-                            else ("IN-PLAY" if has_started else "NS")
-                        )
-                        h_at, h_def = get_team_stats(home_team, is_home=True)
-                        a_at, a_def = get_team_stats(away_team, is_home=False)
+                        # Only include matches playing TODAY
+                        if match_date_str == today_str:
+                            home_team = item.get("home_team", "Home Team")
+                            away_team = item.get("away_team", "Away Team")
+                            scores = item.get("scores")
+                            home_score = 0
+                            away_score = 0
+                            has_started = False
+                            if scores:
+                                has_started = True
+                                for s in scores:
+                                    if s.get("name") == home_team:
+                                        home_score = int(s.get("score", 0))
+                                    elif s.get("name") == away_team:
+                                        away_score = int(s.get("score", 0))
 
-                        time_formatted = (
-                            commence_time.split("T")[1][:5]
-                            if "T" in commence_time
-                            else "16:00"
-                        )
+                            match_status = (
+                                "FINISHED"
+                                if item.get("completed")
+                                else ("IN-PLAY" if has_started else "NS")
+                            )
+                            h_at, h_def = get_team_stats(home_team, is_home=True)
+                            a_at, a_def = get_team_stats(away_team, is_home=False)
 
-                        matches.append(
-                            {
-                                "home": home_team,
-                                "away": away_team,
-                                "home_goals": home_score,
-                                "away_goals": away_score,
-                                "score": f"{home_score} - {away_score}"
-                                if has_started
-                                else "VS",
-                                "home_attack": h_at,
-                                "away_attack": a_at,
-                                "home_xg": round(h_at * 1.1, 2),
-                                "away_xg": round(a_at * 0.9, 2),
-                                "league": "Premier League",
-                                "status": match_status,
-                                "date": formatted_date,
-                                "time": time_formatted,
-                                "utc_iso": commence_time,
-                            }
-                        )
+                            time_formatted = wat_dt.strftime("%H:%M")
+
+                            matches.append(
+                                {
+                                    "home": home_team,
+                                    "away": away_team,
+                                    "home_goals": home_score,
+                                    "away_goals": away_score,
+                                    "score": f"{home_score} - {away_score}"
+                                    if has_started
+                                    else "VS",
+                                    "home_attack": h_at,
+                                    "away_attack": a_at,
+                                    "home_xg": round(h_at * 1.1, 2),
+                                    "away_xg": round(a_at * 0.9, 2),
+                                    "league": "Premier League",
+                                    "status": match_status,
+                                    "date": formatted_date,
+                                    "time": time_formatted,
+                                    "utc_iso": commence_time_str,
+                                }
+                            )
     except Exception as e:
         logger.error(f"Sports API HTTP error: {str(e)}")
 
@@ -435,7 +471,6 @@ async def fetch_livescore_daily_matches(date_str: str = None) -> list:
                 for stage in data.get("Stages", []):
                     league = stage.get("Snm", "Soccer League")
                     for game in stage.get("Events", []):
-                        # Safely retrieve team names without throwing IndexError
                         t1_list = game.get("T1", [])
                         t2_list = game.get("T2", [])
                         home = t1_list[0].get("Nm", "Home") if t1_list else "Home"
@@ -445,7 +480,6 @@ async def fetch_livescore_daily_matches(date_str: str = None) -> list:
                         tr2 = game.get("Tr2")
                         eps = str(game.get("Eps", "NS"))
 
-                        # Ensure start_time_str is string before calling len() and isdigit()
                         raw_time = game.get("Etr") or eps
                         start_time_str = str(raw_time)
 
@@ -479,10 +513,10 @@ async def fetch_livescore_daily_matches(date_str: str = None) -> list:
                 "league": "Premier League",
                 "home": "Arsenal",
                 "away": "Chelsea",
-                "score": "2 - 1",
-                "home_goals": 2,
-                "away_goals": 1,
-                "status": "FT",
+                "score": "VS",
+                "home_goals": 0,
+                "away_goals": 0,
+                "status": "NS",
                 "date": formatted_date,
                 "time": "16:30",
             },
@@ -512,10 +546,10 @@ async def fetch_livescore_daily_matches(date_str: str = None) -> list:
                 "league": "Ligue 1",
                 "home": "Rennes",
                 "away": "Marseille",
-                "score": "1 - 2",
-                "home_goals": 1,
-                "away_goals": 2,
-                "status": "FT",
+                "score": "VS",
+                "home_goals": 0,
+                "away_goals": 0,
+                "status": "NS",
                 "date": formatted_date,
                 "time": "18:00",
             },
@@ -523,12 +557,12 @@ async def fetch_livescore_daily_matches(date_str: str = None) -> list:
                 "league": "Serie A",
                 "home": "Venezia",
                 "away": "Fiorentina",
-                "score": "0 - 0",
+                "score": "VS",
                 "home_goals": 0,
                 "away_goals": 0,
-                "status": "IN-PLAY",
+                "status": "NS",
                 "date": formatted_date,
-                "time": "78'",
+                "time": "19:45",
             },
         ]
 
@@ -950,7 +984,7 @@ async def get_live_streams():
             {
                 "id": "stream_3",
                 "match": "WAFCON & African Sports Stream",
-                "league": "African Football",
+                "league": "African Sports",
                 "status": "LIVE",
                 "embed_url": "https://www.youtube.com/embed/VK3zKabxR_4?autoplay=1",
             },
@@ -1179,6 +1213,7 @@ async def serve_frontend():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
     <title>G10 Master Hub | Sports & Forex Trading System</title>
     <style>
         :root {
@@ -1452,6 +1487,15 @@ async def serve_frontend():
         let isRegisterMode = false;
         let activeTab = 'forex';
         let pollingTimer = null;
+
+        // Register Service Worker for PWA compliance
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
 
         function updateAuthUI() {
             const loggedInUser = localStorage.getItem("g10_username");
@@ -1983,3 +2027,4 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("G10_App:app", host="127.0.0.1", port=8080, reload=True)
+        
