@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G10 Master Hub | Sports & Financial Intelligence</title>
+    
+    <!-- PWA Manifest & Theme -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0d1117">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Sidebar Navigation */
+        sidebar {
+            width: 260px;
+            background-color: #161b22;
+            border-right: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .brand-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #58a6ff;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+        .nav-item {
+            padding: 12px 15px;
+            color: #8b949e;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: #21262d;
+            color: #f0f6fc;
+        }
+        /* Main Content Area */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        header {
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-badge {
+            font-size: 0.9rem;
+            color: #3fb950;
+            background: #23863622;
+            padding: 6px 12px;
+            border: 1px solid #23863666;
+            border-radius: 20px;
+        }
+        .content-body {
+            padding: 30px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #f0f6fc;
+        }
+        .fixture-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <sidebar>
+        <div class="brand-title">G10 MASTER HUB</div>
+        <a href="#" class="nav-item active">Signals & Chart Analysis</a>
+        <a href="#" class="nav-item">Matches & Predictions</a>
+        <a href="#" class="nav-item">Value Engine</a>
+        <a href="#" class="nav-item">Booking Codes</a>
+        <a href="#" class="nav-item">Basketball AI & Fixtures</a>
+        <a href="#" class="nav-item">Betting History</a>
+        <a href="#" class="nav-item">Security/TV Stream</a>
+    </sidebar>
+
+    <main>
+        <header>
+            <h2>MASTER HUB SYSTEM</h2>
+            <div class="user-badge">Logged in: User: g1310</div>
+        </header>
+
+        <div class="content-body">
+            <h2>Today's Match Fixtures</h2>
+            <div class="fixture-card">
+                <h3>Live & Upcoming Matches Loaded</h3>
+                <p style="margin-top: 8px; color: #8b949e;">System operational. PWA Service Worker active for offline caching and installation.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Updated Service Worker Registration Script -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('✅ ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
