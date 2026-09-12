@@ -4,3 +4,4 @@ gunicorn
 beautifulsoup4
 httpx
 jinja2
+sqlalchemy
