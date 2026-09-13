@@ -25,6 +25,7 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.staticfiles import StaticFiles
 from httpx import AsyncClient
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, select
@@ -140,6 +141,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Ensure static directory exists
+os.makedirs("static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 security = HTTPBearer(auto_error=False)
 
 
@@ -174,8 +179,8 @@ def get_team_stats(team_name: str, is_home: bool = True):
     name = team_name.strip().lower()
     if name in TEAM_RATINGS:
         return TEAM_RATINGS[name]["attack"], TEAM_RATINGS[name]["defense"]
-    base_attack = 1.6 if is_home else 1.2
-    base_defense = 1.0 if is_home else 1.3
+    base_attack = 1.4 if is_home else 1.2
+    base_defense = 1.1 if is_home else 1.3
     return base_attack, base_defense
 
 
@@ -200,6 +205,8 @@ async def get_sw():
 
 @app.get("/manifest.json", include_in_schema=False)
 async def get_manifest():
+    if os.path.exists("static/manifest.json"):
+        return FileResponse("static/manifest.json")
     return JSONResponse(
         {
             "name": "G10 Master Hub",
@@ -327,7 +334,6 @@ async def fetch_live_fixtures():
     today_str = now_wat.strftime("%Y-%m-%d")
     formatted_date = now_wat.strftime("%a, %b %d, %Y")
 
-    # Fixed: Query daysFrom=0 to strictly get current/upcoming day match scores and odds
     url = f"https://api.the-odds-api.com/v4/sports/soccer_epl/scores/?apiKey={api_key}&daysFrom=0&dateFormat=iso"
 
     matches = []
@@ -339,12 +345,10 @@ async def fetch_live_fixtures():
                 for item in data:
                     commence_time_str = item.get("commence_time")
                     if commence_time_str:
-                        # Convert UTC match time to WAT local time for date verification
                         utc_dt = datetime.fromisoformat(commence_time_str.replace("Z", "+00:00"))
                         wat_dt = utc_dt.astimezone(WAT_TIMEZONE)
                         match_date_str = wat_dt.strftime("%Y-%m-%d")
 
-                        # Only include matches playing TODAY
                         if match_date_str == today_str:
                             home_team = item.get("home_team", "Home Team")
                             away_team = item.get("away_team", "Away Team")
@@ -381,8 +385,8 @@ async def fetch_live_fixtures():
                                     else "VS",
                                     "home_attack": h_at,
                                     "away_attack": a_at,
-                                    "home_xg": round(h_at * 1.1, 2),
-                                    "away_xg": round(a_at * 0.9, 2),
+                                    "home_xg": round(h_at * 0.95, 2),
+                                    "away_xg": round(a_at * 0.90, 2),
                                     "league": "Premier League",
                                     "status": match_status,
                                     "date": formatted_date,
@@ -403,7 +407,7 @@ async def fetch_live_fixtures():
                 "score": "VS",
                 "home_attack": 2.2,
                 "away_attack": 1.9,
-                "home_xg": 2.1,
+                "home_xg": 1.7,
                 "away_xg": 1.4,
                 "league": "Premier League",
                 "status": "NS",
@@ -419,8 +423,8 @@ async def fetch_live_fixtures():
                 "score": "VS",
                 "home_attack": 1.8,
                 "away_attack": 1.1,
-                "home_xg": 1.9,
-                "away_xg": 0.8,
+                "home_xg": 1.5,
+                "away_xg": 0.9,
                 "league": "Premier League",
                 "status": "NS",
                 "date": formatted_date,
@@ -435,8 +439,8 @@ async def fetch_live_fixtures():
                 "score": "VS",
                 "home_attack": 1.6,
                 "away_attack": 1.1,
-                "home_xg": 1.6,
-                "away_xg": 1.1,
+                "home_xg": 1.3,
+                "away_xg": 1.0,
                 "league": "La Liga",
                 "status": "NS",
                 "date": formatted_date,
@@ -1043,14 +1047,15 @@ async def predict_football(
         else default_a_def
     )
 
-    home_advantage = 0.25
+    # FIXED: Reduced home advantage boost from 0.25 to 0.08 for realistic calculations
+    home_advantage = 0.08
 
     if req.home_xg is not None and req.away_xg is not None:
         home_lambda = req.home_xg + home_advantage
         away_lambda = req.away_xg
     else:
-        home_lambda = max(0.4, (h_attack * 0.6) + (a_defense * 0.4) + home_advantage)
-        away_lambda = max(0.3, (a_attack * 0.6) + (h_defense * 0.4))
+        home_lambda = max(0.4, (h_attack * 0.5) + (a_defense * 0.5) + home_advantage)
+        away_lambda = max(0.3, (a_attack * 0.5) + (h_defense * 0.5))
 
     if req.elapsed_minutes > 0:
         remaining_ratio = max(0.1, (90 - req.elapsed_minutes) / 90.0)
@@ -1212,7 +1217,7 @@ async def serve_frontend():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="/manifest.json">
     <title>G10 Master Hub | Sports & Forex Trading System</title>
     <style>
@@ -1230,9 +1235,9 @@ async def serve_frontend():
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: UI-Sans-Serif, Tahoma, Geneva, Verdana, sans-serif; }
         html, body { background-color: var(--bg-dark); color: var(--text-light); min-height: 100vh; overflow-x: hidden; }
         
-        header { background-color: var(--panel-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 999; }
-        .logo { font-size: 1.4rem; font-weight: bold; color: var(--accent-green); letter-spacing: 1px; }
-        .user-status { display: flex; align-items: center; gap: 15px; color: var(--text-muted); font-size: 0.9rem; }
+        header { background-color: var(--panel-bg); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 999; flex-wrap: wrap; gap: 10px; }
+        .logo { font-size: 1.2rem; font-weight: bold; color: var(--accent-green); letter-spacing: 1px; }
+        .user-status { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.85rem; }
         
         button { cursor: pointer; border: none; border-radius: 4px; padding: 8px 14px; font-weight: 500; transition: background 0.2s; }
         .btn-primary { background-color: var(--accent-green); color: white; width: 100%; }
@@ -1241,16 +1246,16 @@ async def serve_frontend():
         .btn-secondary:hover { border-color: var(--accent-green); }
         
         .container { display: flex; height: calc(100vh - 60px); }
-        aside { width: 260px; background-color: var(--panel-bg); border-right: 1px solid var(--border-color); padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .nav-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 10px; font-size: 0.95rem; text-decoration: none; }
+        aside { width: 260px; background-color: var(--panel-bg); border-right: 1px solid var(--border-color); padding: 15px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+        .nav-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 10px; font-size: 0.9rem; text-decoration: none; white-space: nowrap; }
         .nav-item:hover, .nav-item.active { background-color: var(--border-color); color: var(--text-light); }
         
-        main { flex: 1; padding: 20px; overflow-y: auto; }
+        main { flex: 1; padding: 20px; overflow-y: auto; width: 100%; }
         .category-view { display: none; }
         .category-view.active { display: block !important; }
         
         .card { background-color: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        .card h2 { font-size: 1.2rem; margin-bottom: 15px; color: var(--text-light); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 15px; color: var(--text-light); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .form-group { margin-bottom: 12px; }
@@ -1261,10 +1266,19 @@ async def serve_frontend():
         .badge-red { background: rgba(205, 92, 92, 0.2); color: #cd5c5c; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
         .badge-yellow { background: rgba(218, 165, 32, 0.2); color: #daa520; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
         
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .auth-box { background: var(--panel-bg); padding: 30px; border-radius: 8px; width: 350px; border: 1px solid var(--border-color); }
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 15px; }
+        .auth-box { background: var(--panel-bg); padding: 25px; border-radius: 8px; width: 100%; max-width: 350px; border: 1px solid var(--border-color); }
         .auth-box h2 { margin-bottom: 20px; text-align: center; color: var(--accent-green); }
         .auth-switch { text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; }
+
+        /* MOBILE RESPONSIVE FIXES */
+        @media (max-width: 768px) {
+            .container { flex-direction: column; height: auto; }
+            aside { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border-color); padding: 10px; }
+            .grid-2 { grid-template-columns: 1fr; }
+            main { padding: 12px; }
+            .card { padding: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -1316,23 +1330,19 @@ async def serve_frontend():
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                         <h2 style="color: #fff; margin-bottom:0; border:none; padding:0;">📺 SportyTV & Live Sports Broadcasts</h2>
-                        <div style="display:flex; gap:8px;">
-                            <button class="btn-secondary" onclick="enableNotifications()">🔔 Enable Live Match Alerts</button>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn-secondary" onclick="enableNotifications()">🔔 Enable Alerts</button>
                             <a href="https://www.sporty.com/tv" target="_blank" rel="noopener noreferrer">
-                                <button class="btn-secondary">Launch SportyTV Web Direct ↗</button>
-                            </a>
-                            <a href="https://www.youtube.com/results?search_query=SportyTV+Nigeria+Live+Match" target="_blank" rel="noopener noreferrer">
-                                <button class="btn-secondary">YouTube Live Search ↗</button>
+                                <button class="btn-secondary">SportyTV Direct ↗</button>
                             </a>
                         </div>
                     </div>
 
                     <div style="margin-bottom: 15px; display:flex; gap:10px; flex-wrap:wrap;" id="sportytv-stream-buttons">
-                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/yuQ9nVg47UQ?autoplay=1', 'SportyTV Match Stream #1')">SportyTV Live Direct #1</button>
-                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/3gkGV0VaW2A?autoplay=1', 'Premier League Live Broadcast')">EPL Live Broadcast #2</button>
-                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/VK3zKabxR_4?autoplay=1', 'African Sports Channel')">African Sports Live #3</button>
-                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1', 'International Football Channel')">International Stream #4</button>
-                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1', 'European League Channel')">European Football #5</button>
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/yuQ9nVg47UQ?autoplay=1', 'SportyTV Match Stream #1')">SportyTV Direct #1</button>
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/3gkGV0VaW2A?autoplay=1', 'Premier League Live Broadcast')">EPL Live #2</button>
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/VK3zKabxR_4?autoplay=1', 'African Sports Channel')">African Sports #3</button>
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1', 'International Football Channel')">International #4</button>
                     </div>
 
                     <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:8px; background:#000;">
@@ -1413,7 +1423,7 @@ async def serve_frontend():
                 </div>
             </div>
 
-            <!-- LIVESCORE VIEW FIXED WITH START TIME & SCORE FIX -->
+            <!-- LIVESCORE VIEW -->
             <div id="livescore-view" class="category-view">
                 <div class="card">
                     <h2>⚡ LiveScore Engine & Live Highlights</h2>
@@ -1488,7 +1498,6 @@ async def serve_frontend():
         let activeTab = 'forex';
         let pollingTimer = null;
 
-        // Register Service Worker for PWA compliance
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
@@ -1515,7 +1524,6 @@ async def serve_frontend():
                 document.getElementById("auth-overlay").style.display = "flex";
             }
 
-            // Start 30-Second Auto Polling System
             startAutoPolling();
         });
 
@@ -1525,7 +1533,7 @@ async def serve_frontend():
                 if (activeTab === 'livescore') loadLiveScores(true);
                 if (activeTab === 'football') loadFixtures(true);
                 if (activeTab === 'odds') loadSportybetCodes(true);
-            }, 30000); // 30 seconds interval
+            }, 30000);
         }
 
         function enableNotifications() {
@@ -1735,7 +1743,7 @@ async def serve_frontend():
                 const res = await fetch("/api/fixtures/today");
                 const data = await res.json();
                 container.innerHTML = data.fixtures.map(f => `
-                    <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div>
                             <span style="font-size:0.8rem; color:var(--accent-green);">${f.league}</span>
                             <div style="font-weight:bold; margin-top:3px; font-size:1.05rem;">
@@ -1753,7 +1761,7 @@ async def serve_frontend():
             }
         }
 
-        function populatePredictionForm(home, away, homeAtk = 1.6, awayAtk = 1.2, homeGoals = 0, awayGoals = 0) {
+        function populatePredictionForm(home, away, homeAtk = 1.4, awayAtk = 1.2, homeGoals = 0, awayGoals = 0) {
             switchCategory('football');
             document.getElementById("fb-home").value = home;
             document.getElementById("fb-away").value = away;
@@ -1784,16 +1792,16 @@ async def serve_frontend():
                         if (isFinished) {
                             actionButton = `
                                 <button class="btn-secondary" onclick="playHighlightSearch('${m.home}', '${m.away}')">🎬 Highlights</button>
-                                <span class="badge-red" style="margin-left:5px;">Match Ended</span>
+                                <span class="badge-red" style="margin-left:5px;">Ended</span>
                             `;
                         } else if (isNotStarted) {
                             actionButton = `
-                                <button class="btn-secondary" onclick="populatePredictionForm('${m.home}', '${m.away}', 1.6, 1.2, 0, 0)">Predict Score</button>
+                                <button class="btn-secondary" onclick="populatePredictionForm('${m.home}', '${m.away}', 1.4, 1.2, 0, 0)">Predict Score</button>
                                 <span class="badge-yellow" style="margin-left:5px;">Starts: ${m.time}</span>
                             `;
                         } else {
                             actionButton = `
-                                <button class="btn-secondary" onclick="populatePredictionForm('${m.home}', '${m.away}', 1.6, 1.2, ${m.home_goals || 0}, ${m.away_goals || 0})">Predict Live Score</button>
+                                <button class="btn-secondary" onclick="populatePredictionForm('${m.home}', '${m.away}', 1.4, 1.2, ${m.home_goals || 0}, ${m.away_goals || 0})">Predict Live Score</button>
                                 <span class="badge-green" style="margin-left:5px;">IN-PLAY (${m.time})</span>
                             `;
                         }
@@ -1859,7 +1867,7 @@ async def serve_frontend():
                 const data = await res.json();
                 if (data.status === "success" && data.tickets.length > 0) {
                     container.innerHTML = data.tickets.map(t => `
-                        <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                        <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                             <div>
                                 <span style="font-size:0.8rem; color:var(--accent-green);">${t.bookie}</span>
                                 <div style="font-weight:bold; margin-top:3px; font-size:1.1rem; letter-spacing:1px; color:#3cb371;">Booking Code: ${t.booking_code}</div>
@@ -1939,7 +1947,7 @@ async def serve_frontend():
                 const res = await fetch("/api/fixtures/basketball");
                 const data = await res.json();
                 container.innerHTML = data.fixtures.map(f => `
-                    <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div>
                             <span style="font-size:0.8rem; color:var(--accent-green);">${f.league}</span>
                             <div style="font-weight:bold; margin-top:3px;">${f.home} vs ${f.away}</div>
@@ -2027,4 +2035,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("G10_App:app", host="127.0.0.1", port=8080, reload=True)
-        
