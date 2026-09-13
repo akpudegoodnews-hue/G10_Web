@@ -26,8 +26,8 @@
       "label": "Desktop View"
     },
     {
-      "src": "/static/icon-192.png",
-      "sizes": "192x192",
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Mobile View"
