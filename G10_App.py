@@ -1,4 +1,5 @@
 import hashlib
+import httpx
 import json
 import logging
 import math
@@ -125,9 +126,10 @@ class PredictionModel(Base):
     user = relationship("UserModel", back_populates="predictions")
 
 
-# ==========================================
-# APP INITIALIZATION & LIFECYCLE
-# ==========================================
+# =========================================================
+# FASTAPI APP INITIALIZATION
+# =========================================================
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
@@ -136,8 +138,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="G10 Master Hub",
+    title="G10 Master Hub API",
     description="PREDICTION & FOREX TRADING AI",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
