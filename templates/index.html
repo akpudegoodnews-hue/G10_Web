@@ -2,135 +2,813 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>G10 Master Hub | Sports & Financial Intelligence</title>
-    
-    <!-- PWA Manifest & Theme -->
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#0d1117">
-    <link rel="apple-touch-icon" href="/static/icon-192.png">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="/manifest.json">
+    <title>G10 Master Hub | Sports & Forex Trading System</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --bg-dark: #171717;
+            --panel-bg: #222222;
+            --border-color: #333333;
+            --accent-green: #2e8b57;
+            --accent-hover: #3cb371;
+            --green: #228b22;
+            --red: #cd5c5c;
+            --text-light: #f1f1f1;
+            --text-muted: #aaaaaa;
         }
-        body {
-            background-color: #0d1117;
-            color: #c9d1d9;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        /* Sidebar Navigation */
-        sidebar {
-            width: 260px;
-            background-color: #161b22;
-            border-right: 1px solid #30363d;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .brand-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #58a6ff;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-        }
-        .nav-item {
-            padding: 12px 15px;
-            color: #8b949e;
-            text-decoration: none;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            transition: all 0.3s ease;
-        }
-        .nav-item:hover, .nav-item.active {
-            background-color: #21262d;
-            color: #f0f6fc;
-        }
-        /* Main Content Area */
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-        header {
-            background-color: #161b22;
-            border-bottom: 1px solid #30363d;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .user-badge {
-            font-size: 0.9rem;
-            color: #3fb950;
-            background: #23863622;
-            padding: 6px 12px;
-            border: 1px solid #23863666;
-            border-radius: 20px;
-        }
-        .content-body {
-            padding: 30px;
-        }
-        h2 {
-            margin-bottom: 20px;
-            color: #f0f6fc;
-        }
-        .fixture-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: UI-Sans-Serif, Tahoma, Geneva, Verdana, sans-serif; }
+        html, body { background-color: var(--bg-dark); color: var(--text-light); min-height: 100vh; overflow-x: hidden; }
+        
+        header { background-color: var(--panel-bg); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 999; flex-wrap: wrap; gap: 10px; }
+        .logo { font-size: 1.2rem; font-weight: bold; color: var(--accent-green); letter-spacing: 1px; }
+        .user-status { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.85rem; }
+        
+        button { cursor: pointer; border: none; border-radius: 4px; padding: 8px 14px; font-weight: 500; transition: background 0.2s; }
+        .btn-primary { background-color: var(--accent-green); color: white; width: 100%; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-light); }
+        .btn-secondary:hover { border-color: var(--accent-green); }
+        
+        .container { display: flex; height: calc(100vh - 60px); }
+        aside { width: 260px; background-color: var(--panel-bg); border-right: 1px solid var(--border-color); padding: 15px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+        .nav-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 10px; font-size: 0.9rem; text-decoration: none; white-space: nowrap; }
+        .nav-item:hover, .nav-item.active { background-color: var(--border-color); color: var(--text-light); }
+        
+        main { flex: 1; padding: 20px; overflow-y: auto; width: 100%; }
+        .category-view { display: none; }
+        .category-view.active { display: block !important; }
+        
+        .card { background-color: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .card h2 { font-size: 1.1rem; margin-bottom: 15px; color: var(--text-light); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-light); }
+        
+        .badge-green { background: rgba(46, 139, 87, 0.2); color: #3cb371; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .badge-red { background: rgba(205, 92, 92, 0.2); color: #cd5c5c; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .badge-yellow { background: rgba(218, 165, 32, 0.2); color: #daa520; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 15px; }
+        .auth-box { background: var(--panel-bg); padding: 25px; border-radius: 8px; width: 100%; max-width: 350px; border: 1px solid var(--border-color); }
+        .auth-box h2 { margin-bottom: 20px; text-align: center; color: var(--accent-green); }
+        .auth-switch { text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; }
+
+        /* MOBILE RESPONSIVE FIXES */
+        @media (max-width: 768px) {
+            .container { flex-direction: column; height: auto; }
+            aside { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border-color); padding: 10px; }
+            .grid-2 { grid-template-columns: 1fr; }
+            main { padding: 12px; }
+            .card { padding: 15px; }
         }
     </style>
 </head>
 <body>
 
-    <sidebar>
-        <div class="brand-title">G10 MASTER HUB</div>
-        <a href="#" class="nav-item active">Signals & Chart Analysis</a>
-        <a href="#" class="nav-item">Matches & Predictions</a>
-        <a href="#" class="nav-item">Value Engine</a>
-        <a href="#" class="nav-item">Booking Codes</a>
-        <a href="#" class="nav-item">Basketball AI & Fixtures</a>
-        <a href="#" class="nav-item">Betting History</a>
-        <a href="#" class="nav-item">Security/TV Stream</a>
-    </sidebar>
-
-    <main>
-        <header>
-            <h2>MASTER HUB SYSTEM</h2>
-            <div class="user-badge">Logged in: User: g1310</div>
-        </header>
-
-        <div class="content-body">
-            <h2>Today's Match Fixtures</h2>
-            <div class="fixture-card">
-                <h3>Live & Upcoming Matches Loaded</h3>
-                <p style="margin-top: 8px; color: #8b949e;">System operational. PWA Service Worker active for offline caching and installation.</p>
-            </div>
+    <div id="auth-overlay">
+        <div id="auth-modal" class="auth-box">
+            <h2 id="auth-title">User Login</h2>
+            <form id="auth-form" onsubmit="submitAuth(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="auth-user" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-pass" required autocomplete="current-password">
+                </div>
+                <div class="form-group" id="phone-group" style="display:none;">
+                    <label>Phone Number (Optional)</label>
+                    <input type="text" id="auth-phone" autocomplete="tel">
+                </div>
+                <button type="submit" class="btn-primary" id="auth-submit-btn">Login</button>
+            </form>
+            <div class="auth-switch" onclick="toggleAuthMode()">Need an account? Register</div>
         </div>
-    </main>
+    </div>
 
-    <!-- Updated Service Worker Registration Script -->
+    <header>
+        <div class="logo">G10 MASTER HUB SYSTEM</div>
+        <div class="user-status">
+            <span>Logged in: <strong id="user-display" style="color:#00ff87;">Guest</strong></span>
+            <button class="btn-secondary" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside>
+            <a class="nav-item active" onclick="switchCategory('forex', event)">Forex Signals & Chart Analysis</a>
+            <a class="nav-item" onclick="switchCategory('football', event)">Live Matches & Predictions</a>
+            <a class="nav-item" onclick="switchCategory('livescore', event)">⚡ LiveScore Engine</a>
+            <a class="nav-item" onclick="switchCategory('odds', event)">Today's Betting Codes</a>
+            <a class="nav-item" onclick="switchCategory('basketball', event)">Basketball AI & Fixtures</a>
+            <a class="nav-item" onclick="switchCategory('history', event)">Prediction History</a>
+            <a class="nav-item" onclick="switchCategory('sportytv', event)">Live SportyTV Stream</a>
+        </aside>
+
+        <main>
+            <!-- SPORTYTV VIEW -->
+            <div id="sportytv-view" class="category-view">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                        <h2 style="color: #fff; margin-bottom:0; border:none; padding:0;">📺 SportyTV & Live Sports Broadcasts</h2>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn-secondary" onclick="enableNotifications()">🔔 Enable Alerts</button>
+                            <a href="https://www.sporty.com/tv" target="_blank" rel="noopener noreferrer">
+                                <button class="btn-secondary">SportyTV Direct ↗</button>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 15px; display:flex; gap:10px; flex-wrap:wrap;" id="sportytv-stream-buttons">
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/yuQ9nVg47UQ?autoplay=1', 'SportyTV Match Stream #1')">SportyTV Direct #1</button>
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/3gkGV0VaW2A?autoplay=1', 'Premier League Live Broadcast')">EPL Live #2</button>
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/VK3zKabxR_4?autoplay=1', 'African Sports Channel')">African Sports #3</button>
+                        <button class="btn-secondary" onclick="setStream('https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1', 'International Football Channel')">International #4</button>
+                    </div>
+
+                    <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:8px; background:#000;">
+                        <iframe 
+                            id="sportytv-player"
+                            src="https://www.youtube.com/embed/yuQ9nVg47UQ?autoplay=1" 
+                            style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOREX VIEW -->
+            <div id="forex-view" class="category-view active">
+                <div class="card">
+                    <h2>Smart Forex Trading Signals</h2>
+                    <button class="btn-secondary" onclick="loadForexSignals()" style="margin-bottom:15px;">Fetch Live Forex Signals</button>
+                    <div id="forex-signals-container"></div>
+                </div>
+                <div class="card">
+                    <h2>Chart Analysis Screenshot Tool</h2>
+                    <div class="form-group">
+                        <label>Upload Screenshot of your MT4, MT5, or TradingView chart to receive actionable trade guidance.</label>
+                        <input type="file" id="forex-screenshot" accept="image/*">
+                    </div>
+                    <button class="btn-primary" onclick="analyzeChartScreenshot()">Analyze Chart Screenshot</button>
+                    <div id="forex-screenshot-analysis" style="margin-top:15px;"></div>
+                </div>
+            </div>
+
+            <!-- FOOTBALL FIXTURES & PREDICTOR VIEW -->
+            <div id="football-view" class="category-view">
+                <div class="card">
+                    <h2>Live Match Fixtures (Auto-Refreshed)</h2>
+                    <button class="btn-secondary" onclick="loadFixtures()" style="margin-bottom:15px;">Refresh Matches Now</button>
+                    <div id="fb-fixtures-container"></div>
+                </div>
+                <div class="card">
+                    <h2>Multi-Factor Poisson Correct Score Engine</h2>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Home Team</label>
+                            <input type="text" id="fb-home" placeholder="e.g. Chelsea">
+                        </div>
+                        <div class="form-group">
+                            <label>Away Team</label>
+                            <input type="text" id="fb-away" placeholder="e.g. Hull City">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Home Attack Rating (Auto-Calculated if empty)</label>
+                            <input type="number" step="0.1" id="fb-home-at" placeholder="e.g. 1.9">
+                        </div>
+                        <div class="form-group">
+                            <label>Away Attack Rating (Auto-Calculated if empty)</label>
+                            <input type="number" step="0.1" id="fb-away-at" placeholder="e.g. 0.7">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Live Home Goals</label>
+                            <input type="number" id="fb-home-goals" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Live Away Goals</label>
+                            <input type="number" id="fb-away-goals" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Elapsed Minutes (leave '0' for pre-match)</label>
+                        <input type="number" id="fb-elapsed" value="0">
+                    </div>
+                    <button class="btn-primary" onclick="runFootballPrediction()">Run Multi-Factor Analysis</button>
+                    <div id="fb-output" style="margin-top:15px;"></div>
+                </div>
+            </div>
+
+            <!-- LIVESCORE VIEW -->
+            <div id="livescore-view" class="category-view">
+                <div class="card">
+                    <h2>⚡ LiveScore Engine & Live Highlights</h2>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Auto-updating every 30 seconds. Showing today's fixtures only.</div>
+                    <button class="btn-secondary" onclick="loadLiveScores()" style="margin-bottom:15px;">Refresh Scores Now</button>
+                    <div id="livescore-container">Loading Live Scores...</div>
+                </div>
+            </div>
+
+            <!-- BETTING CODES VIEW -->
+            <div id="odds-view" class="category-view">
+                <div class="card">
+                    <h2>Premier League Odds (The Odds API)</h2>
+                    <button class="btn-secondary" onclick="loadEplOdds()" style="margin-bottom:15px;">Fetch Live EPL Bookmaker Odds</button>
+                    <div id="odds-container"></div>
+                </div>
+                <div class="card">
+                    <h2>Daily Sportybet Booking Codes (20 Active Codes pulled from Betloy)</h2>
+                    <button class="btn-secondary" onclick="loadSportybetCodes()" style="margin-bottom:15px;">Refresh Sportybet Codes</button>
+                    <div id="sportybet-codes-container"></div>
+                </div>
+            </div>
+
+            <!-- BASKETBALL VIEW -->
+            <div id="basketball-view" class="category-view">
+                <div class="card">
+                    <h2>Basketball Match Fixtures</h2>
+                    <button class="btn-secondary" onclick="loadBasketballFixtures()" style="margin-bottom:15px;">Load Basketball Matches</button>
+                    <div id="bb-fixtures-container"></div>
+                </div>
+                <div class="card">
+                    <h2>Basketball Match Analysis (PPG Model)</h2>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Home Team</label>
+                            <input type="text" id="bb-home" placeholder="e.g. Atlanta Dream">
+                        </div>
+                        <div class="form-group">
+                            <label>Away Team</label>
+                            <input type="text" id="bb-away" placeholder="e.g. Las Vegas Aces">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Home PPG</label>
+                            <input type="number" id="bb-home-ppg" value="110.0">
+                        </div>
+                        <div class="form-group">
+                            <label>Away PPG</label>
+                            <input type="number" id="bb-away-ppg" value="105.0">
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="runBasketballPrediction()">Analyze Basketball Match</button>
+                    <div id="bb-output" style="margin-top:15px;"></div>
+                </div>
+            </div>
+
+            <!-- HISTORY VIEW -->
+            <div id="history-view" class="category-view">
+                <div class="card">
+                    <h2>Saved Predictions History</h2>
+                    <button class="btn-secondary" onclick="fetchHistory()" style="margin-bottom:15px;">Refresh Saved History</button>
+                    <div id="history-list">No saved predictions yet.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
     <script>
+        let authToken = localStorage.getItem("g10_token") || null;
+        let isRegisterMode = false;
+        let activeTab = 'forex';
+        let pollingTimer = null;
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/sw.js')
-                    .then(registration => {
-                        console.log('✅ ServiceWorker registration successful with scope: ', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('❌ ServiceWorker registration failed: ', error);
-                    });
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
             });
+        }
+
+        function updateAuthUI() {
+            const loggedInUser = localStorage.getItem("g10_username");
+            const userDisplay = document.getElementById("user-display");
+
+            if (userDisplay) {
+                userDisplay.innerText = loggedInUser ? loggedInUser : "Guest";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            updateAuthUI();
+            if (authToken) {
+                document.getElementById("auth-overlay").style.display = "none";
+                fetchProfile();
+            } else {
+                document.getElementById("auth-overlay").style.display = "flex";
+            }
+
+            startAutoPolling();
+        });
+
+        function startAutoPolling() {
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(() => {
+                if (activeTab === 'livescore') loadLiveScores(true);
+                if (activeTab === 'football') loadFixtures(true);
+                if (activeTab === 'odds') loadSportybetCodes(true);
+            }, 30000);
+        }
+
+        function enableNotifications() {
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notifications.");
+                return;
+            }
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    new Notification("SportyTV Live Alerts Enabled", {
+                        body: "You will receive real-time notifications when live sports streams start!"
+                    });
+                }
+            });
+        }
+
+        function triggerStreamNotification(matchName) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("🔴 Live Sports Streaming on SportyTV!", {
+                    body: `Live match starting: ${matchName}. Click to watch now!`,
+                    icon: "/favicon.ico"
+                });
+            }
+        }
+
+        function setStream(url, matchName) {
+            document.getElementById("sportytv-player").src = url;
+            if (matchName) {
+                triggerStreamNotification(matchName);
+            }
+        }
+
+        function playHighlightSearch(home, away) {
+            switchCategory('sportytv');
+            const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(home + ' vs ' + away + ' match highlights')}`;
+            window.open(searchUrl, '_blank');
+        }
+
+        function formatMatchTime(utcIsoString) {
+            if (!utcIsoString) return "16:00";
+            try {
+                const date = new Date(utcIsoString);
+                if (isNaN(date.getTime())) return utcIsoString;
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return utcIsoString;
+            }
+        }
+
+        async function fetchProfile() {
+            if (!authToken) return;
+            try {
+                const res = await fetch("/api/user/profile", {
+                    headers: { "Authorization": `Bearer ${authToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("user-display").innerText = `User: ${data.username}`;
+                } else if (res.status === 401) {
+                    logout();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function switchCategory(cat, event) {
+            activeTab = cat;
+            document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+            document.querySelectorAll(".category-view").forEach(el => el.classList.remove("active"));
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add("active");
+            } else {
+                const navLinks = document.querySelectorAll(".nav-item");
+                navLinks.forEach(link => {
+                    if (link.getAttribute("onclick") && link.getAttribute("onclick").includes(cat)) {
+                        link.classList.add("active");
+                    }
+                });
+            }
+            const targetView = document.getElementById(cat + "-view");
+            if (targetView) {
+                targetView.classList.add("active");
+            }
+
+            if (cat === 'forex') loadForexSignals();
+            if (cat === 'football') loadFixtures();
+            if (cat === 'livescore') loadLiveScores();
+            if (cat === 'odds') { loadEplOdds(); loadSportybetCodes(); }
+            if (cat === 'basketball') loadBasketballFixtures();
+            if (cat === 'history') fetchHistory();
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById("auth-title").innerText = isRegisterMode ? "Register Account" : "User Login";
+            document.getElementById("phone-group").style.display = isRegisterMode ? "block" : "none";
+            document.getElementById("auth-submit-btn").innerText = isRegisterMode ? "Register Account" : "Login";
+        }
+
+        async function submitAuth(e) {
+            e.preventDefault();
+            const username = document.getElementById("auth-user").value;
+            const password = document.getElementById("auth-pass").value;
+            const phone = document.getElementById("auth-phone").value;
+
+            const endpoint = isRegisterMode ? "/api/auth/register" : "/api/auth/login";
+            const payload = isRegisterMode ? { username, password, phone_number: phone } : { username, password };
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    authToken = data.token;
+                    localStorage.setItem("g10_token", authToken);
+                    localStorage.setItem("g10_username", username);
+                    updateAuthUI();
+                    document.getElementById("auth-overlay").style.display = "none";
+                    loadForexSignals();
+                } else {
+                    alert(data.detail || "Authentication failed.");
+                }
+            } catch (err) {
+                alert("Server connection failed.");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("g10_token");
+            localStorage.removeItem("g10_username");
+            authToken = null;
+            updateAuthUI();
+            document.getElementById("auth-overlay").style.display = "flex";
+        }
+
+        async function loadForexSignals() {
+            if (!authToken) return;
+            const container = document.getElementById("forex-signals-container");
+            container.innerHTML = "<p style='color:var(--text-muted);'>Loading forex signals...</p>";
+            try {
+                const res = await fetch("/api/forex/signals", {
+                    headers: { "Authorization": `Bearer ${authToken}` }
+                });
+                if (res.status === 401) { logout(); return; }
+                const data = await res.json();
+                container.innerHTML = data.map(s => `
+                    <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color);">
+                        <strong>${s.pair}</strong> — <span class="badge-${s.signal === 'BUY' ? 'green' : 'red'}">${s.signal}</span>
+                        <div style="margin-top:5px; font-size:0.85rem; color:var(--text-muted);">
+                            Entry: <strong>${s.entry}</strong> | Stop Loss: <strong>${s.stop_loss}</strong> | Take Profit: <strong>${s.take_profit}</strong>
+                        </div>
+                        <div style="margin-top:4px; font-size:0.85rem;">${s.reasoning}</div>
+                    </div>
+                `).join("");
+            } catch (e) {
+                container.innerHTML = "<p style='color:var(--red);'>Failed to load forex signals.</p>";
+            }
+        }
+
+        async function analyzeChartScreenshot() {
+            if (!authToken) { alert("Please login first."); return; }
+            const fileInput = document.getElementById("forex-screenshot");
+            if (!fileInput.files[0]) {
+                alert("Please select a chart image first.");
+                return;
+            }
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            const outputDiv = document.getElementById("forex-screenshot-analysis");
+            outputDiv.innerHTML = "<p style='color:var(--text-muted);'>Analyzing chart...</p>";
+
+            try {
+                const res = await fetch("/api/forex/analyze-screenshot", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${authToken}` },
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const a = data.analysis;
+                    outputDiv.innerHTML = `
+                        <div style="background:var(--bg-dark); padding:15px; border-radius:6px; border:1px solid var(--border-color);">
+                            <span class="badge-green">${a.detected_structure}</span> — <strong style="color:var(--accent-green);">${a.recommended_action}</strong>
+                            <div style="margin-top:8px; font-size:0.9rem;">Suggested Entry: <strong>${a.trade_setup.suggested_entry}</strong></div>
+                            <div style="font-size:0.9rem;">Stop Loss: <strong>${a.trade_setup.stop_loss}</strong> | Take Profit: <strong>${a.trade_setup.take_profit}</strong></div>
+                            <div style="margin-top:6px; font-size:0.85rem; color:var(--text-muted);">${a.reasoning}</div>
+                        </div>
+                    `;
+                } else {
+                    outputDiv.innerHTML = "<p style='color:var(--red);'>Failed to analyze screenshot.</p>";
+                }
+            } catch (e) {
+                outputDiv.innerHTML = "<p style='color:var(--red);'>Error connecting to analysis engine.</p>";
+            }
+        }
+
+        async function loadFixtures(isSilent = false) {
+            const container = document.getElementById("fb-fixtures-container");
+            if (!isSilent) container.innerHTML = "<p style='color:var(--text-muted);'>Loading today's fixtures...</p>";
+            try {
+                const res = await fetch("/api/fixtures/today");
+                const data = await res.json();
+                container.innerHTML = data.fixtures.map(f => `
+                    <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <span style="font-size:0.8rem; color:var(--accent-green);">${f.league}</span>
+                            <div style="font-weight:bold; margin-top:3px; font-size:1.05rem;">
+                                ${f.home} <span style="color:#00ff87; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; margin:0 5px;">${f.score || 'VS'}</span> ${f.away}
+                            </div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
+                                📅 ${f.date || 'Today'} | ⏱️ Start Time: <strong>${f.time || '16:00'}</strong> | xG: ${f.home_xg} - ${f.away_xg}
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="populatePredictionForm('${f.home}', '${f.away}', ${f.home_attack}, ${f.away_attack}, ${f.home_goals || 0}, ${f.away_goals || 0})">Predict Score</button>
+                    </div>
+                `).join("");
+            } catch (e) {
+                if (!isSilent) container.innerHTML = "<p style='color:var(--red);'>Failed to load fixtures.</p>";
+            }
+        }
+
+        function populatePredictionForm(home, away, homeAtk = 1.4, awayAtk = 1.2, homeGoals = 0, awayGoals = 0) {
+            switchCategory('football');
+            document.getElementById("fb-home").value = home;
+            document.getElementById("fb-away").value = away;
+            document.getElementById("fb-home-at").value = homeAtk;
+            document.getElementById("fb-away-at").value = awayAtk;
+            document.getElementById("fb-home-goals").value = homeGoals;
+            document.getElementById("fb-away-goals").value = awayGoals;
+            runFootballPrediction();
+        }
+
+        async function loadLiveScores(isSilent = false) {
+            const container = document.getElementById("livescore-container");
+            if (!isSilent) container.innerHTML = "<p style='color:var(--text-muted);'>Loading today's live scores...</p>";
+            try {
+                const res = await fetch("/api/livescore/today");
+                const data = await res.json();
+                if (data.matches && data.matches.length > 0) {
+                    container.innerHTML = data.matches.map(m => {
+                        const isFinished = m.status === "FT" || m.status === "FINISHED" || m.status === "AET";
+                        const isNotStarted = m.status === "NS" || m.status === "SCHEDULED" || m.score === "VS";
+                        
+                        let displayScore = m.score;
+                        if (isNotStarted) {
+                            displayScore = "VS";
+                        }
+
+                        let actionButton = "";
+                        if (isFinished) {
+                            actionButton = `
+                                <button class="btn-secondary" onclick="playHighlightSearch('${m.home}', '${m.away}')">🎬 Highlights</button>
+                                <span class="badge-red" style="margin-left:5px;">Ended</span>
+                            `;
+                        } else if (isNotStarted) {
+                            actionButton = `
+                                <button class="btn-secondary" onclick="populatePredictionForm('${m.home}', '${m.away}', 1.4, 1.2, 0, 0)">Predict Score</button>
+                                <span class="badge-yellow" style="margin-left:5px;">Starts: ${m.time}</span>
+                            `;
+                        } else {
+                            actionButton = `
+                                <button class="btn-secondary" onclick="populatePredictionForm('${m.home}', '${m.away}', 1.4, 1.2, ${m.home_goals || 0}, ${m.away_goals || 0})">Predict Live Score</button>
+                                <span class="badge-green" style="margin-left:5px;">IN-PLAY (${m.time})</span>
+                            `;
+                        }
+
+                        return `
+                            <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                <div>
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <span style="font-size:0.8rem; color:var(--accent-green); font-weight:bold;">${m.league}</span>
+                                        <span style="font-size:0.78rem; color:var(--text-muted);">📅 ${m.date} | ⏱️ Kickoff: <strong>${m.time}</strong></span>
+                                    </div>
+                                    <div style="font-weight:bold; margin-top:4px; font-size:1.05rem;">
+                                        ${m.home} <span style="color:#00ff87; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:4px; margin:0 5px;">${displayScore}</span> ${m.away}
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    ${actionButton}
+                                </div>
+                            </div>
+                        `;
+                    }).join("");
+                } else {
+                    container.innerHTML = "<p style='color:var(--text-muted);'>No live scores available for today.</p>";
+                }
+            } catch (e) {
+                if (!isSilent) container.innerHTML = "<p style='color:var(--red);'>Failed to fetch live scores.</p>";
+            }
+        }
+
+        async function loadEplOdds() {
+            const container = document.getElementById("odds-container");
+            container.innerHTML = "<p style='color:var(--text-muted);'>Fetching live odds from UK bookmakers...</p>";
+            try {
+                const res = await fetch("/api/odds/epl");
+                const data = await res.json();
+                if (data.status === "success" && data.data.length > 0) {
+                    container.innerHTML = data.data.map(m => `
+                        <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color);">
+                            <div style="font-weight:bold;">${m.home_team} vs ${m.away_team}</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Kickoff: ${formatMatchTime(m.commence_time)}</div>
+                            <div style="margin-top:8px; display:flex; gap:10px; flex-wrap:wrap;">
+                                ${m.bookmakers.map(bm => `
+                                    <div style="background:var(--panel-bg); padding:6px 10px; border-radius:4px; font-size:0.8rem; border:1px solid var(--border-color);">
+                                        <strong>${bm.bookmaker}</strong>: ${bm.outcomes.map(o => `<span>${o.name} (${o.price})</span>`).join(" | ")}
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                    `).join("");
+                } else {
+                    container.innerHTML = "<p style='color:var(--text-muted);'>No live odds available at the moment.</p>";
+                }
+            } catch (e) {
+                container.innerHTML = "<p style='color:var(--red);'>Failed to fetch odds.</p>";
+            }
+        }
+
+        async function loadSportybetCodes(isSilent = false) {
+            const container = document.getElementById("sportybet-codes-container");
+            if (!isSilent) container.innerHTML = "<p style='color:var(--text-muted);'>Pulling 20 active Sportybet codes directly from Betloy...</p>";
+            try {
+                const res = await fetch("/api/get-sportybet-codes");
+                const data = await res.json();
+                if (data.status === "success" && data.tickets.length > 0) {
+                    container.innerHTML = data.tickets.map(t => `
+                        <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <span style="font-size:0.8rem; color:var(--accent-green);">${t.bookie}</span>
+                                <div style="font-weight:bold; margin-top:3px; font-size:1.1rem; letter-spacing:1px; color:#3cb371;">Booking Code: ${t.booking_code}</div>
+                                <div style="font-size:0.85rem; color:var(--text-muted); margin-top:2px;">Total Odds: <strong>${t.total_odds}</strong> | Matches: ${t.matches}</div>
+                            </div>
+                            <span class="badge-green">${t.status}</span>
+                        </div>
+                    `).join("");
+                } else {
+                    container.innerHTML = "<p style='color:var(--text-muted);'>No booking codes available right now.</p>";
+                }
+            } catch (e) {
+                if (!isSilent) container.innerHTML = "<p style='color:var(--red);'>Failed to load booking codes.</p>";
+            }
+        }
+
+        async function runFootballPrediction() {
+            if (!authToken) { alert("Please login to run predictions."); return; }
+            const homeAtkVal = document.getElementById("fb-home-at").value;
+            const awayAtkVal = document.getElementById("fb-away-at").value;
+
+            const payload = {
+                home_team: document.getElementById("fb-home").value || "Chelsea",
+                away_team: document.getElementById("fb-away").value || "Hull City",
+                home_attack_rating: homeAtkVal !== "" ? parseFloat(homeAtkVal) : null,
+                away_attack_rating: awayAtkVal !== "" ? parseFloat(awayAtkVal) : null,
+                live_home_goals: parseInt(document.getElementById("fb-home-goals").value) || 0,
+                live_away_goals: parseInt(document.getElementById("fb-away-goals").value) || 0,
+                elapsed_minutes: parseInt(document.getElementById("fb-elapsed").value) || 0
+            };
+
+            const outputDiv = document.getElementById("fb-output");
+            outputDiv.innerHTML = "<p style='color:var(--text-muted);'>Running Multi-Factor Poisson Analysis...</p>";
+
+            try {
+                const res = await fetch("/api/predict/football", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    outputDiv.innerHTML = `
+                        <div style="background:var(--bg-dark); padding:15px; border-radius:6px; border:1px solid var(--border-color);">
+                            <span class="badge-green">Multi-Factor Engine Result</span>
+                            <div style="font-weight:bold; margin-top:8px; font-size:1rem;">${data.match}</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:3px;">
+                                Used Ratings: Home Atk (${data.used_ratings.home_attack}) vs Away Atk (${data.used_ratings.away_attack})
+                            </div>
+                            <div style="margin-top:6px; font-size:0.9rem;">Calculated xG: Home <strong>${data.calculated_xg.home_xg}</strong> - Away <strong>${data.calculated_xg.away_xg}</strong></div>
+                            <div style="margin-top:6px; font-size:0.9rem;">Likely Final Correct Score: <strong style="color:var(--accent-green);">${data.top_correct_scores[0].score}</strong> (${data.top_correct_scores[0].probability.toFixed(1)}%)</div>
+                            <div style="margin-top:10px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; font-size:0.85rem;">
+                                <div>Home Win: <strong>${data.win_probabilities.home}</strong></div>
+                                <div>Draw: <strong>${data.win_probabilities.draw}</strong></div>
+                                <div>Away Win: <strong>${data.win_probabilities.away}</strong></div>
+                            </div>
+                            <div style="margin-top:8px; font-size:0.85rem; color:var(--text-muted);">
+                                Over 2.5: <strong>${data.trading_signals.over_25}</strong> | Under 2.5: <strong>${data.trading_signals.under_25}</strong> | BTTS: <strong>${data.trading_signals.btts}</strong>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    outputDiv.innerHTML = "<p style='color:var(--red);'>Failed to generate prediction.</p>";
+                }
+            } catch (e) {
+                outputDiv.innerHTML = "<p style='color:var(--red);'>Prediction server error.</p>";
+            }
+        }
+
+        async function loadBasketballFixtures() {
+            const container = document.getElementById("bb-fixtures-container");
+            container.innerHTML = "<p style='color:var(--text-muted);'>Loading basketball matches...</p>";
+            try {
+                const res = await fetch("/api/fixtures/basketball");
+                const data = await res.json();
+                container.innerHTML = data.fixtures.map(f => `
+                    <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <span style="font-size:0.8rem; color:var(--accent-green);">${f.league}</span>
+                            <div style="font-weight:bold; margin-top:3px;">${f.home} vs ${f.away}</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:2px;">Tip-off: ${formatMatchTime(f.utc_iso)}</div>
+                        </div>
+                        <span class="badge-green">${f.status}</span>
+                    </div>
+                `).join("");
+            } catch (e) {
+                container.innerHTML = "<p style='color:var(--red);'>Failed to load basketball fixtures.</p>";
+            }
+        }
+
+        async function runBasketballPrediction() {
+            if (!authToken) { alert("Please login to run predictions."); return; }
+            const payload = {
+                home_team: document.getElementById("bb-home").value || "Atlanta Dream",
+                away_team: document.getElementById("bb-away").value || "Las Vegas Aces",
+                home_ppg: parseFloat(document.getElementById("bb-home-ppg").value) || 110.0,
+                away_ppg: parseFloat(document.getElementById("bb-away-ppg").value) || 105.0
+            };
+
+            const outputDiv = document.getElementById("bb-output");
+            outputDiv.innerHTML = "<p style='color:var(--text-muted);'>Calculating basketball projections...</p>";
+
+            try {
+                const res = await fetch("/api/predict/basketball", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    outputDiv.innerHTML = `
+                        <div style="background:var(--bg-dark); padding:15px; border-radius:6px; border:1px solid var(--border-color);">
+                            <span class="badge-green">Basketball PPG Model</span>
+                            <div style="font-weight:bold; margin-top:8px;">${data.match}</div>
+                            <div style="margin-top:6px; font-size:0.9rem;">Projected Score: <strong style="color:var(--accent-green);">${data.projected_score}</strong></div>
+                            <div style="margin-top:4px; font-size:0.85rem; color:var(--text-muted);">${data.total_points_line}</div>
+                            <div style="margin-top:6px; font-size:0.9rem;">Sure Pick: <strong>${data.sure_prediction}</strong></div>
+                        </div>
+                    `;
+                } else {
+                    outputDiv.innerHTML = "<p style='color:var(--red);'>Failed to analyze basketball match.</p>";
+                }
+            } catch (e) {
+                outputDiv.innerHTML = "<p style='color:var(--red);'>Basketball prediction error.</p>";
+            }
+        }
+
+        async function fetchHistory() {
+            if (!authToken) return;
+            const container = document.getElementById("history-list");
+            container.innerHTML = "<p style='color:var(--text-muted);'>Loading saved history...</p>";
+            try {
+                const res = await fetch("/api/user/predictions", {
+                    headers: { "Authorization": `Bearer ${authToken}` }
+                });
+                const history = await res.json();
+                if (history.length > 0) {
+                    container.innerHTML = history.map(item => `
+                        <div style="background:var(--bg-dark); padding:12px; border-radius:6px; margin-bottom:10px; border:1px solid var(--border-color);">
+                            <span class="badge-green">${item.type.toUpperCase()}</span>
+                            <div style="font-weight:bold; margin-top:5px; font-size:0.95rem;">${item.summary}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Saved on: ${item.date}</div>
+                        </div>
+                    `).join("");
+                } else {
+                    container.innerHTML = "<p style='color:var(--text-muted);'>No saved predictions yet.</p>";
+                }
+            } catch (e) {
+                container.innerHTML = "<p style='color:var(--red);'>Failed to retrieve history.</p>";
+            }
         }
     </script>
 </body>
